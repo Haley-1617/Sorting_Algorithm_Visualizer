@@ -16,7 +16,6 @@
 //
 
 #include <iostream>
-//#include <cassert>
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 
@@ -100,7 +99,6 @@ public:
     ~Algorithm(){}
     void selection(std::vector<Bar> &data);
     void setSize(int dataSize) {this->dataSize = dataSize;}
-    int getCursor() {return cursor.index;}
     bool getNeedSwap() {return needSwap;}
     bool getIsSort() {return isSort;}
     void swapBar(std::vector<Bar> &dataset);
@@ -134,8 +132,8 @@ void Algorithm::selection(std::vector<Bar> &dataset) {
 }
 
 void Algorithm::swapBar(std::vector<Bar> &dataset) {
-    dataset[lastPos.index - 1].x += 15;
-    dataset[minIndex].x -= 15;
+    dataset[lastPos.index - 1].x += 25;
+    dataset[minIndex].x -= 25;
     
     if (dataset[lastPos.index - 1].x >= swapPos.second) {
         dataset[lastPos.index - 1].x = swapPos.second;
@@ -176,7 +174,9 @@ private:
     std::vector<Bar> dataset;
     int dataSize;
     int sortAlg;
-    enum Sort_Algorithm {NONE, SELECTION};
+    bool isPause;
+    enum KEY {NONE, PAUSE, SELECTION, INSERTION, BUBBLE,
+        QUICK, MERGE, SHELL};
     void handleEvent();
     sf::Clock clock;
     float elapsed;
@@ -196,7 +196,7 @@ void Sorting::handleEvent() {
     if (sortAlg != NONE) {
         if (sortAlg == SELECTION && !alg.getIsSort()) alg.selection(dataset);
         else if (alg.getIsSort()) {
-//            sortAlg = NONE;
+            sortAlg = NONE;
 //            for (int i = 0; i < dataset.size(); i++)
 //                std::cout << dataset[i].data << std::endl;
         }
@@ -209,6 +209,7 @@ Sorting::Sorting() : window("Sorting", sf::Vector2u(1200,1200)), alg(){
     sortAlg = NONE;
     clock.restart();
     elapsed = 0.0f;
+    isPause = false;
     srand(time(nullptr));
     for (int i = 0, posX = 60; i < dataSize; i++, posX += 30)
         dataset.push_back(Bar(rand() % 100 + 1, posX));
@@ -219,9 +220,11 @@ void Sorting::Update() {
     handleInput();
     float timestep = 1.0f / 10;
     if (elapsed >= timestep) {
-        handleEvent();
+        if (!isPause) {
+            handleEvent();
+            if (alg.getNeedSwap()) alg.swapBar(dataset);
+        }
         elapsed -= timestep;
-        if (alg.getNeedSwap()) alg.swapBar(dataset);
     }
     render();
     window.display();
@@ -232,8 +235,15 @@ void Sorting::handleInput() {
     window.clearDraw();
     while (window.getWindow()->pollEvent(e)) {
         if (e.type == sf::Event::Closed) window.setCloseWindow();
-        if (e.type == sf::Event::KeyPressed)
-            if (e.key.code == sf::Keyboard::Enter) sortAlg = SELECTION;
+        if (e.type == sf::Event::KeyPressed) {
+            if (e.key.code == sf::Keyboard::Num1) sortAlg = SELECTION;
+            if (e.key.code == sf::Keyboard::Num2) sortAlg = INSERTION;
+            if (e.key.code == sf::Keyboard::Num3) sortAlg = BUBBLE;
+            if (e.key.code == sf::Keyboard::Num4) sortAlg = QUICK;
+            if (e.key.code == sf::Keyboard::Num5) sortAlg = MERGE;
+            if (e.key.code == sf::Keyboard::Num6) sortAlg = SHELL;
+            if (e.key.code == sf::Keyboard::Space) isPause = !isPause;
+        }
     }
 }
 
