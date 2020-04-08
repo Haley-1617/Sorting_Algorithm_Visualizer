@@ -126,7 +126,7 @@ void Algorithm::selection(std::vector<Bar> &dataset) {
 //            swap data
             swapPos.first = dataset[lastPos.index].x;
             swapPos.second = dataset[minIndex].x;
-            if (lastPos.index != minIndex) needSwap = true;
+            needSwap = true;
             lastPos.index++;
             lastPos.data = dataset[lastPos.index].data;
         }
@@ -134,15 +134,16 @@ void Algorithm::selection(std::vector<Bar> &dataset) {
 }
 
 void Algorithm::swapBar(std::vector<Bar> &dataset) {
-    if (dataset[lastPos.index - 1].x == swapPos.second) {
+    dataset[lastPos.index - 1].x += 15;
+    dataset[minIndex].x -= 15;
+    
+    if (dataset[lastPos.index - 1].x >= swapPos.second) {
+        dataset[lastPos.index - 1].x = swapPos.second;
+        dataset[minIndex].x = swapPos.first;
         needSwap = false;
         std::swap(dataset[lastPos.index - 1], dataset[minIndex]);
         minIndex = lastPos.index;
         cursor = lastPos;
-    }
-    else {
-        dataset[lastPos.index - 1].x += 10;
-        dataset[minIndex].x -= 10;
     }
 }
 void Algorithm::drawBar(sf::RenderWindow &window, int data, int posX, sf::Color color) {
@@ -194,7 +195,11 @@ public:
 void Sorting::handleEvent() {
     if (sortAlg != NONE) {
         if (sortAlg == SELECTION && !alg.getIsSort()) alg.selection(dataset);
-        else if (alg.getIsSort()) sortAlg = NONE;
+        else if (alg.getIsSort()) {
+//            sortAlg = NONE;
+//            for (int i = 0; i < dataset.size(); i++)
+//                std::cout << dataset[i].data << std::endl;
+        }
     }
 }
 
@@ -212,7 +217,7 @@ Sorting::Sorting() : window("Sorting", sf::Vector2u(1200,1200)), alg(){
 void Sorting::Update() {
     window.clearDraw();
     handleInput();
-    float timestep = 1.0f / 5;
+    float timestep = 1.0f / 10;
     if (elapsed >= timestep) {
         handleEvent();
         elapsed -= timestep;
