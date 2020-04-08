@@ -118,17 +118,18 @@ void Algorithm::selection(std::vector<Bar> &dataset) {
         lastPos.data = dataset[0].data;
         cursor.data = lastPos.data;
     }
-    cursor.index++;
-    cursor.data = dataset[cursor.index].data;
-    if (dataset[minIndex].data > cursor.data)
-        minIndex = cursor.index;
-    if (cursor.index == dataset.size() - 1) {
-//        swap data
-        swapPos.first = dataset[lastPos.index].x;
-        swapPos.second = dataset[minIndex].x;
-        needSwap = true;
-        lastPos.index++;
-        lastPos.data = dataset[lastPos.index].data;
+    if (!needSwap) {
+        cursor.index++;
+        cursor.data = dataset[cursor.index].data;
+        if (dataset[minIndex].data > cursor.data) minIndex = cursor.index;
+        if (cursor.index == dataset.size() - 1) {
+//            swap data
+            swapPos.first = dataset[lastPos.index].x;
+            swapPos.second = dataset[minIndex].x;
+            if (lastPos.index != minIndex) needSwap = true;
+            lastPos.index++;
+            lastPos.data = dataset[lastPos.index].data;
+        }
     }
 }
 
@@ -140,8 +141,8 @@ void Algorithm::swapBar(std::vector<Bar> &dataset) {
         cursor = lastPos;
     }
     else {
-        dataset[lastPos.index - 1].x += 5;
-        dataset[minIndex].x -= 5;
+        dataset[lastPos.index - 1].x += 10;
+        dataset[minIndex].x -= 10;
     }
 }
 void Algorithm::drawBar(sf::RenderWindow &window, int data, int posX, sf::Color color) {
@@ -157,8 +158,7 @@ void Algorithm::render(sf::RenderWindow &window, std::vector<Bar> &dataset) {
     sf::Color darkRed(184, 4, 40);
     if (needSwap) {
         drawBar(window, dataset[lastPos.index - 1].data, dataset[lastPos.index - 1].x, darkRed);
-        if (lastPos.index != minIndex)
-            drawBar(window, dataset[minIndex].data, dataset[minIndex].x, sf::Color(0, 204, 88));
+        drawBar(window, dataset[minIndex].data, dataset[minIndex].x, sf::Color(0, 204, 88));
         drawBar(window, dataset[cursor.index].data, dataset[cursor.index].x, darkRed);
     } else {
         drawBar(window, dataset[lastPos.index].data, dataset[lastPos.index].x, darkRed);
@@ -216,6 +216,7 @@ void Sorting::Update() {
     if (elapsed >= timestep) {
         handleEvent();
         elapsed -= timestep;
+        if (alg.getNeedSwap()) alg.swapBar(dataset);
     }
     render();
     window.display();
@@ -234,7 +235,6 @@ void Sorting::handleInput() {
 void Sorting::render() {
     sf::RectangleShape bar;
     std::vector<Bar>::iterator iter;
-    if (alg.getNeedSwap()) alg.swapBar(dataset);
     for (iter = dataset.begin(); iter != dataset.end(); ++iter)
         alg.drawBar(*window.getWindow(), iter->data, iter->x, sf::Color(102, 181, 255));
     if (sortAlg == SELECTION) alg.render(*window.getWindow(), dataset);
