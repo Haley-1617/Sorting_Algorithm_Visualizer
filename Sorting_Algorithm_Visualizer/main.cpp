@@ -16,6 +16,7 @@
 //
 
 #include <iostream>
+//#include <cassert>
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 
@@ -108,6 +109,7 @@ public:
 };
 
 void Algorithm::selection(std::vector<Bar> &dataset) {
+    assert(minIndex >= lastPos.index);
     if (lastPos.index == dataset.size() - 1) {
         isSort = true;
         return;
@@ -118,10 +120,8 @@ void Algorithm::selection(std::vector<Bar> &dataset) {
     }
     cursor.index++;
     cursor.data = dataset[cursor.index].data;
-    if (cursor.data > dataset[cursor.index].data) {
-        cursor.data = dataset[cursor.index].data;
+    if (dataset[minIndex].data > cursor.data)
         minIndex = cursor.index;
-    }
     if (cursor.index == dataset.size() - 1) {
 //        swap data
         swapPos.first = dataset[lastPos.index].x;
@@ -129,14 +129,15 @@ void Algorithm::selection(std::vector<Bar> &dataset) {
         needSwap = true;
         lastPos.index++;
         lastPos.data = dataset[lastPos.index].data;
-        cursor = lastPos;
     }
 }
 
 void Algorithm::swapBar(std::vector<Bar> &dataset) {
     if (dataset[lastPos.index - 1].x == swapPos.second) {
         needSwap = false;
+        std::swap(dataset[lastPos.index - 1], dataset[minIndex]);
         minIndex = lastPos.index;
+        cursor = lastPos;
     }
     else {
         dataset[lastPos.index - 1].x += 5;
@@ -156,11 +157,14 @@ void Algorithm::render(sf::RenderWindow &window, std::vector<Bar> &dataset) {
     sf::Color darkRed(184, 4, 40);
     if (needSwap) {
         drawBar(window, dataset[lastPos.index - 1].data, dataset[lastPos.index - 1].x, darkRed);
-        drawBar(window, dataset[minIndex].data, dataset[minIndex].x, darkRed);
+        if (lastPos.index != minIndex)
+            drawBar(window, dataset[minIndex].data, dataset[minIndex].x, sf::Color(0, 204, 88));
+        drawBar(window, dataset[cursor.index].data, dataset[cursor.index].x, darkRed);
     } else {
         drawBar(window, dataset[lastPos.index].data, dataset[lastPos.index].x, darkRed);
         drawBar(window, dataset[cursor.index].data, dataset[cursor.index].x, darkRed);
-        drawBar(window, dataset[minIndex].data, dataset[minIndex].x, sf::Color(0, 204, 88));
+        if (lastPos.index != minIndex)
+            drawBar(window, dataset[minIndex].data, dataset[minIndex].x, sf::Color(0, 204, 88));
     }
 }
 
@@ -190,7 +194,7 @@ public:
 void Sorting::handleEvent() {
     if (sortAlg != NONE) {
         if (sortAlg == SELECTION && !alg.getIsSort()) alg.selection(dataset);
-        else if (alg.getIsSort()) sortAlg == NONE;
+        else if (alg.getIsSort()) sortAlg = NONE;
     }
 }
 
@@ -208,7 +212,7 @@ Sorting::Sorting() : window("Sorting", sf::Vector2u(1200,1200)), alg(){
 void Sorting::Update() {
     window.clearDraw();
     handleInput();
-    float timestep = 1.0f / 2;
+    float timestep = 1.0f / 5;
     if (elapsed >= timestep) {
         handleEvent();
         elapsed -= timestep;
