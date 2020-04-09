@@ -101,13 +101,12 @@ public:
     void setSize(int dataSize) {this->dataSize = dataSize;}
     bool getNeedSwap() {return needSwap;}
     bool getIsSort() {return isSort;}
-    void swapBar(std::vector<Bar> &dataset);
+    void swapBar(std::vector<Bar> &dataset, int index1, int index2);
     void drawBar(sf::RenderWindow &window, int data, int posX, sf::Color color);
     void render(sf::RenderWindow &window, std::vector<Bar> &dataset);
 };
 
 void Algorithm::selection(std::vector<Bar> &dataset) {
-    assert(minIndex >= lastPos.index);
     if (lastPos.index == dataset.size() - 1) {
         isSort = true;
         return;
@@ -128,22 +127,23 @@ void Algorithm::selection(std::vector<Bar> &dataset) {
             lastPos.index++;
             lastPos.data = dataset[lastPos.index].data;
         }
+    } else if (needSwap){
+        swapBar(dataset, lastPos.index - 1, minIndex);
+        if (dataset[lastPos.index - 1].x >= swapPos.second) {
+            dataset[lastPos.index - 1].x = swapPos.second;
+            dataset[minIndex].x = swapPos.first;
+            needSwap = false;
+            std::swap(dataset[lastPos.index - 1], dataset[minIndex]);
+            minIndex = lastPos.index;
+            cursor = lastPos;
+        }
     }
 }
 
-void Algorithm::swapBar(std::vector<Bar> &dataset) {
+void Algorithm::swapBar(std::vector<Bar> &dataset, int index1, int index2) {
 //    swapping speed
-    dataset[lastPos.index - 1].x += 25;
-    dataset[minIndex].x -= 25;
-    
-    if (dataset[lastPos.index - 1].x >= swapPos.second) {
-        dataset[lastPos.index - 1].x = swapPos.second;
-        dataset[minIndex].x = swapPos.first;
-        needSwap = false;
-        std::swap(dataset[lastPos.index - 1], dataset[minIndex]);
-        minIndex = lastPos.index;
-        cursor = lastPos;
-    }
+    dataset[index1].x += 25;
+    dataset[index2].x -= 25;
 }
 
 void Algorithm::drawBar(sf::RenderWindow &window, int data, int posX, sf::Color color) {
@@ -168,6 +168,21 @@ void Algorithm::render(sf::RenderWindow &window, std::vector<Bar> &dataset) {
             drawBar(window, dataset[minIndex].data, dataset[minIndex].x, sf::Color(0, 204, 88));
     }
 }
+
+class Selection : public Algorithm {
+private:
+    Node lastPos;
+    Node cursor;
+    int minIndex;
+    std::pair<int, int> swapPos;
+    
+public:
+    Selection();
+    ~Selection(){}
+    void Update();
+    void sorting(std::vector<Bar> &data);
+    void render(sf::RenderWindow &window, std::vector<Bar> &dataset);
+};
 
 class Sorting {
 private:
@@ -227,7 +242,6 @@ void Sorting::Update() {
     if (elapsed >= timestep) {
         if (!isPause) {
             handleEvent();
-            if (alg.getNeedSwap()) alg.swapBar(dataset);
         }
         elapsed -= timestep;
     }
