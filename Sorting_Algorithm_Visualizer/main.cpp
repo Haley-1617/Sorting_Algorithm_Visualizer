@@ -132,6 +132,7 @@ void Algorithm::selection(std::vector<Bar> &dataset) {
 }
 
 void Algorithm::swapBar(std::vector<Bar> &dataset) {
+//    swapping speed
     dataset[lastPos.index - 1].x += 25;
     dataset[minIndex].x -= 25;
     
@@ -144,6 +145,7 @@ void Algorithm::swapBar(std::vector<Bar> &dataset) {
         cursor = lastPos;
     }
 }
+
 void Algorithm::drawBar(sf::RenderWindow &window, int data, int posX, sf::Color color) {
     int posY = 900, ratio = 5;
     sf::RectangleShape bar;
@@ -173,6 +175,7 @@ private:
     Algorithm alg;
     std::vector<Bar> dataset;
     int dataSize;
+    int speed;
     int sortAlg;
     bool isPause;
     enum KEY {NONE, PAUSE, SELECTION, INSERTION, BUBBLE,
@@ -205,6 +208,7 @@ void Sorting::handleEvent() {
 
 Sorting::Sorting() : window("Sorting", sf::Vector2u(1200,1200)), alg(){
     dataSize = 20;
+    speed = 10;
     alg.setSize(dataSize);
     sortAlg = NONE;
     clock.restart();
@@ -218,7 +222,8 @@ Sorting::Sorting() : window("Sorting", sf::Vector2u(1200,1200)), alg(){
 void Sorting::Update() {
     window.clearDraw();
     handleInput();
-    float timestep = 1.0f / 10;
+//    algorithm speed
+    float timestep = 1.0f / speed;
     if (elapsed >= timestep) {
         if (!isPause) {
             handleEvent();
@@ -243,6 +248,11 @@ void Sorting::handleInput() {
             if (e.key.code == sf::Keyboard::Num5) sortAlg = MERGE;
             if (e.key.code == sf::Keyboard::Num6) sortAlg = SHELL;
             if (e.key.code == sf::Keyboard::Space) isPause = !isPause;
+            if (e.key.code == sf::Keyboard::Right) {
+                speed -= 1;
+                if (speed <= 0) speed = 1;
+            }
+            if (e.key.code == sf::Keyboard::Left) speed += 1;
         }
     }
 }
