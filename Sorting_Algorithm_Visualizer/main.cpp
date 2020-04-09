@@ -94,7 +94,6 @@ private:
 public:
     Algorithm() : dataSize(0), isSort(false), swapPos(0,0){}
     ~Algorithm(){}
-    void Update() {}
     void setSize(int dataSize) {this->dataSize = dataSize;}
     bool getNeedSwap() {return needSwap;}
     void setNeedSwap() {needSwap = !needSwap;}
@@ -129,7 +128,6 @@ private:
 public:
     Selection() : lastPos(), cursor(), minIndex(0), swapPos(0, 0){}
     ~Selection(){}
-    void Update(std::vector<Bar> &dataset) {sorting(dataset);}
     void sorting(std::vector<Bar> &dataset);
     void render(sf::RenderWindow &window, std::vector<Bar> &dataset);
 };
@@ -182,6 +180,21 @@ void Selection::render(sf::RenderWindow &window, std::vector<Bar> &dataset) {
     }
 }
 
+class Insertion : public Algorithm {
+private:
+    Node current;
+    Node compareNode;
+    std::pair<int, int> swapPos;
+
+public:
+    Insertion() : current(), compareNode(), swapPos(0, 0){}
+    ~Insertion(){}
+    void Update(std::vector<Bar> &dataset);
+    void sorting(std::vector<Bar> &dataset);
+};
+enum KEY {NONE, PAUSE, SELECTION, INSERTION, BUBBLE,
+    QUICK, MERGE, SHELL};
+
 template <typename T>
 class Sorting {
 private:
@@ -192,8 +205,6 @@ private:
     int speed;
     int sortAlg;
     bool isPause;
-    enum KEY {NONE, PAUSE, SELECTION, INSERTION, BUBBLE,
-        QUICK, MERGE, SHELL};
     void handleEvent();
     sf::Clock clock;
     float elapsed;
@@ -211,7 +222,7 @@ public:
 
 template <typename T>
 void Sorting<T>::handleEvent() {
-    if (sortAlg == SELECTION && !alg.getIsSort()) alg.Update(dataset);
+    if (sortAlg != NONE && !alg.getIsSort()) alg.sorting(dataset);
     else if (alg.getIsSort()) sortAlg = NONE;
 }
 
