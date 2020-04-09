@@ -86,59 +86,23 @@ struct Bar {
 
 class Algorithm {
 private:
-    Node lastPos;
-    Node cursor;
-    int minIndex;
     int dataSize;
     bool isSort;    // true if dataset is sorted
     bool needSwap;  // true if we need to swap data
     std::pair<int, int> swapPos;
     
 public:
-    Algorithm() : lastPos(), cursor(), dataSize(0), minIndex(0), isSort(false), swapPos(0,0){}
+    Algorithm() : dataSize(0), isSort(false), swapPos(0,0){}
     ~Algorithm(){}
-    void selection(std::vector<Bar> &data);
+    void Update() {}
     void setSize(int dataSize) {this->dataSize = dataSize;}
     bool getNeedSwap() {return needSwap;}
+    void setNeedSwap() {needSwap = !needSwap;}
     bool getIsSort() {return isSort;}
+    void setIsSort() {isSort = !isSort;}
     void swapBar(std::vector<Bar> &dataset, int index1, int index2);
     void drawBar(sf::RenderWindow &window, int data, int posX, sf::Color color);
-    void render(sf::RenderWindow &window, std::vector<Bar> &dataset);
 };
-
-void Algorithm::selection(std::vector<Bar> &dataset) {
-    if (lastPos.index == dataset.size() - 1) {
-        isSort = true;
-        return;
-    }
-    if (lastPos.index == 0 && cursor.index == 0) {
-        lastPos.data = dataset[0].data;
-        cursor.data = lastPos.data;
-    }
-    if (!needSwap) {
-        cursor.index++;
-        cursor.data = dataset[cursor.index].data;
-        if (dataset[minIndex].data > cursor.data) minIndex = cursor.index;
-        if (cursor.index == dataset.size() - 1) {
-//            swap data
-            swapPos.first = dataset[lastPos.index].x;
-            swapPos.second = dataset[minIndex].x;
-            needSwap = true;
-            lastPos.index++;
-            lastPos.data = dataset[lastPos.index].data;
-        }
-    } else if (needSwap){
-        swapBar(dataset, lastPos.index - 1, minIndex);
-        if (dataset[lastPos.index - 1].x >= swapPos.second) {
-            dataset[lastPos.index - 1].x = swapPos.second;
-            dataset[minIndex].x = swapPos.first;
-            needSwap = false;
-            std::swap(dataset[lastPos.index - 1], dataset[minIndex]);
-            minIndex = lastPos.index;
-            cursor = lastPos;
-        }
-    }
-}
 
 void Algorithm::swapBar(std::vector<Bar> &dataset, int index1, int index2) {
 //    swapping speed
@@ -155,9 +119,58 @@ void Algorithm::drawBar(sf::RenderWindow &window, int data, int posX, sf::Color 
     window.draw(bar);
 }
 
-void Algorithm::render(sf::RenderWindow &window, std::vector<Bar> &dataset) {
+class Selection : public Algorithm {
+private:
+    Node lastPos;
+    Node cursor;
+    int minIndex;
+    std::pair<int, int> swapPos;
+    
+public:
+    Selection() : lastPos(), cursor(), minIndex(0), swapPos(0, 0){}
+    ~Selection(){}
+    void Update(std::vector<Bar> &dataset) {sorting(dataset);}
+    void sorting(std::vector<Bar> &dataset);
+    void render(sf::RenderWindow &window, std::vector<Bar> &dataset);
+};
+
+void Selection::sorting(std::vector<Bar> &dataset) {
+    if (lastPos.index == dataset.size() - 1) {
+        setIsSort();
+        return;
+    }
+    if (lastPos.index == 0 && cursor.index == 0) {
+        lastPos.data = dataset[0].data;
+        cursor.data = lastPos.data;
+    }
+    if (!getNeedSwap()) {
+        cursor.index++;
+        cursor.data = dataset[cursor.index].data;
+        if (dataset[minIndex].data > cursor.data) minIndex = cursor.index;
+        if (cursor.index == dataset.size() - 1) {
+//            swap data
+            swapPos.first = dataset[lastPos.index].x;
+            swapPos.second = dataset[minIndex].x;
+            setNeedSwap();
+            lastPos.index++;
+            lastPos.data = dataset[lastPos.index].data;
+        }
+    } else if (getNeedSwap()){
+        swapBar(dataset, lastPos.index - 1, minIndex);
+        if (dataset[lastPos.index - 1].x >= swapPos.second) {
+            dataset[lastPos.index - 1].x = swapPos.second;
+            dataset[minIndex].x = swapPos.first;
+            setNeedSwap();
+            std::swap(dataset[lastPos.index - 1], dataset[minIndex]);
+            minIndex = lastPos.index;
+            cursor = lastPos;
+        }
+    }
+}
+
+void Selection::render(sf::RenderWindow &window, std::vector<Bar> &dataset) {
     sf::Color darkRed(184, 4, 40);
-    if (needSwap) {
+    if (getNeedSwap()) {
         drawBar(window, dataset[lastPos.index - 1].data, dataset[lastPos.index - 1].x, darkRed);
         drawBar(window, dataset[minIndex].data, dataset[minIndex].x, sf::Color(0, 204, 88));
         drawBar(window, dataset[cursor.index].data, dataset[cursor.index].x, darkRed);
@@ -169,25 +182,11 @@ void Algorithm::render(sf::RenderWindow &window, std::vector<Bar> &dataset) {
     }
 }
 
-class Selection : public Algorithm {
-private:
-    Node lastPos;
-    Node cursor;
-    int minIndex;
-    std::pair<int, int> swapPos;
-    
-public:
-    Selection();
-    ~Selection(){}
-    void Update();
-    void sorting(std::vector<Bar> &data);
-    void render(sf::RenderWindow &window, std::vector<Bar> &dataset);
-};
-
+template <typename T>
 class Sorting {
 private:
     Window window;
-    Algorithm alg;
+    T alg;
     std::vector<Bar> dataset;
     int dataSize;
     int speed;
@@ -210,18 +209,14 @@ public:
     void restartClock() {elapsed += clock.restart().asSeconds();}
 };
 
-void Sorting::handleEvent() {
-    if (sortAlg != NONE) {
-        if (sortAlg == SELECTION && !alg.getIsSort()) alg.selection(dataset);
-        else if (alg.getIsSort()) {
-            sortAlg = NONE;
-//            for (int i = 0; i < dataset.size(); i++)
-//                std::cout << dataset[i].data << std::endl;
-        }
-    }
+template <typename T>
+void Sorting<T>::handleEvent() {
+    if (sortAlg == SELECTION && !alg.getIsSort()) alg.Update(dataset);
+    else if (alg.getIsSort()) sortAlg = NONE;
 }
 
-Sorting::Sorting() : window("Sorting", sf::Vector2u(1200,1200)), alg(){
+template <typename T>
+Sorting<T>::Sorting() : window("Sorting", sf::Vector2u(1200,1200)){
     dataSize = 20;
     speed = 10;
     alg.setSize(dataSize);
@@ -234,7 +229,8 @@ Sorting::Sorting() : window("Sorting", sf::Vector2u(1200,1200)), alg(){
         dataset.push_back(Bar(rand() % 100 + 1, posX));
 }
 
-void Sorting::Update() {
+template <typename T>
+void Sorting<T>::Update() {
     window.clearDraw();
     handleInput();
 //    algorithm speed
@@ -249,7 +245,8 @@ void Sorting::Update() {
     window.display();
 }
 
-void Sorting::handleInput() {
+template <typename T>
+void Sorting<T>::handleInput() {
     sf::Event e;
     window.clearDraw();
     while (window.getWindow()->pollEvent(e)) {
@@ -271,7 +268,8 @@ void Sorting::handleInput() {
     }
 }
 
-void Sorting::render() {
+template <typename T>
+void Sorting<T>::render() {
     sf::RectangleShape bar;
     std::vector<Bar>::iterator iter;
     for (iter = dataset.begin(); iter != dataset.end(); ++iter)
@@ -281,7 +279,7 @@ void Sorting::render() {
 
 int main(int argc, char const** argv)
 {
-    Sorting game;
+    Sorting<Selection> game;
     while (!game.closeWindow()) {
         game.Update();
         game.restartClock();
